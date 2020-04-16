@@ -18,17 +18,17 @@ import time
 import glob
 import cv2
 
-
 ########################### THIS IS A Supervised clustering example  #############################
 
 # Image files stored in the folders
-my_files_1 = sorted(glob.glob('/home/faisal/Tagflix_POC/Deep_Image_Cluster/Cropped_Image_2/Cropped_Image/*.jpg'), key=lambda x: int(x.split("/")[-1].split(".")[0]))
+my_files_1 = sorted(glob.glob('./Cropped_Image_2/Cropped_Image/*.jpg'), key=lambda x: int(x.split("/")[-1].split(".")[0]))
 print(my_files_1)
 
 
 start = time.time()
 
 model = ResNet50(weights='imagenet', pooling=max, include_top=False)
+
 
 ####### GENERATING and Accumulating All FEATURES
 
@@ -37,9 +37,9 @@ start = time.time()
 k=0
 my_feature = []  # All feature is to stored here
 small_file =[]
-N_of_Cluster =10
-for index in range(100): # Here the number 1000
+N_of_Cluster =3
 
+for index in range(100): # Here the number 1000
 
         # f = cv2.imread(os.path.join(my_files_1, file))
         # img = image.load_img(f, target_size=(224, 224))
@@ -65,7 +65,6 @@ for index in range(100): # Here the number 1000
 
 labels =[]
 
-
 def cluster (my_feature):
 
         print("\n\n clustering in Progress")
@@ -89,7 +88,7 @@ def save_img_cluster (labels):
 
         for i in range(N_of_Cluster+1):
                 try :
-                        os.mkdir('/home/faisal/Tagflix_POC/Deep_Image_Cluster/Clustered_foloder/For_balck_video/'+str(i))
+                        os.mkdir('./Clustered_folder/For_balck_video/'+str(i))
                 except:
                         continue
 
@@ -97,15 +96,11 @@ def save_img_cluster (labels):
         for index, lb in enumerate(labels):
 
             img = cv2.imread(my_files_1[index])
-            write_path = '/home/faisal/Tagflix_POC/Deep_Image_Cluster/Clustered_foloder/For_balck_video/' + str(lb) + '/'
+            write_path = './Clustered_folder/For_balck_video/' + str(lb) + '/'
             cv2.imwrite(write_path + str(index)+'.jpg',img)
 
 
-
-
 save_img_cluster(labels)
-
-
 
 
 end = time.time()
