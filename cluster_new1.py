@@ -7,6 +7,7 @@ from keras.preprocessing import image
 from keras.applications.imagenet_utils import preprocess_input
 import numpy as np
 from sklearn.cluster import KMeans
+from lshash.lshash_2_py3 import LSHash
 
 #from google.cloud import storage
 from io import BytesIO
@@ -18,6 +19,7 @@ import cv2
 class SupervisedCluster():
 
     def __init__(self):
+
         self.my_files_1 = sorted(glob.glob('./Cropped_Image_2/Cropped_Image/*.jpg'),key=lambda x: int(x.split("/")[-1].split(".")[0]))
         self.model = ResNet50(weights='imagenet', pooling=max, include_top=False)
         self.k = 0
@@ -26,10 +28,22 @@ class SupervisedCluster():
         self.N_of_Cluster = 3
         self.labels = []
         self.clusteredImgSavePath = './Clustered_folder/For_balck_video/'
+        self.range = 1000
+
+
+    def init_lsh(self, no_bit, no_hash_per_table):
+
+        self.lsh = LSHash(hash_size=no_bit, input_dim=self.range,
+                          num_hashtables=1, num_hash_per_tables=no_hash_per_table, storage_config=None,
+                          matrices_filename=None, overwrite=False)
+
+        print(" LSH pbject instantiated ")
+
+
 
     def avg_downsample(self,feature):
 
-        k =4  # sampling factor
+        k =8  # sampling factor
         f= feature.reshape(-1, k).mean(axis=1)
         return f
 
@@ -79,12 +93,14 @@ class SupervisedCluster():
             #return self.my_feature
 
     def imageRange(self):
+
         path, dirs, files = next(os.walk("./Cropped_Image_2/Cropped_Image"))
         file_count = len(files)
         print(file_count)
         return file_count
 
     def modelSelect(self,var):
+
         if(var=='1'):
             self.model= ResNet50(weights='imagenet', pooling=max, include_top=False)
         elif(var=='2'):
@@ -92,10 +108,35 @@ class SupervisedCluster():
 
         #print (self.model.summary)
 
+    def indexing_feature(self,feature,additional_data, indx):
 
+        self.lsh.index(feature[0:self.range], additional_data)
+
+        print("indexing ::", indx)
+        # print("indexing ::", additional_data)
+        # print("indexing ::", feature)
+
+
+    def query_image(self,img_feature):
+
+        s = time.time()
+        query_result = self.lsh.query(img_feature[0:self.range], num_results=10, distance_func='euclidean')
+        e = time.time()
+
+        print(" \n query_time ", e-s, '\n')
+        return query_result
+
+
+    def hashing_clustered_image(self):
+
+        for index, (f,label) in enumerate(zip(self.my_feature, self.labels)):
+
+            self.indexing_feature(feature=f,additional_data=self.my_files_1[index].split('/')[-1]+ "  ,Folder " + str(label) ,indx = index)
 
 
 if __name__ == '__main__':
+
+
     start = time.time()
     print("1:Resnet50\n2:VGG19\n3:MobilenetSSD\n")
     var=input()
@@ -110,4 +151,17 @@ if __name__ == '__main__':
     svc.save_img_cluster()
     end = time.time()
     print('\n\n time spend: ', (end - start) / 60, ' minutes \n\n')
+
+    svc.range = np.array(svc.my_feature).shape[1]
+    svc.init_lsh(no_bit=12,no_hash_per_table=5)
+    svc.hashing_clustered_image()
+
+    for ff in svc.my_feature:
+
+        result=svc.query_image(img_feature=ff)
+        print(result)
+
+
+
+    print(np.array(svc.my_feature).shape)
     cv2.destroyAllWindows()
