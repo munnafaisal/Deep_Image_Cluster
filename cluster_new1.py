@@ -16,6 +16,7 @@ import glob
 import cv2
 
 class SupervisedCluster():
+
     def __init__(self):
         self.my_files_1 = sorted(glob.glob('./Cropped_Image_2/Cropped_Image/*.jpg'),key=lambda x: int(x.split("/")[-1].split(".")[0]))
         self.model = ResNet50(weights='imagenet', pooling=max, include_top=False)
@@ -25,6 +26,12 @@ class SupervisedCluster():
         self.N_of_Cluster = 3
         self.labels = []
         self.clusteredImgSavePath = './Clustered_folder/For_balck_video/'
+
+    def avg_downsample(self,feature):
+
+        k =4  # sampling factor
+        f= feature.reshape(-1, k).mean(axis=1)
+        return f
 
     def cluster(self):
         print("\n\n clustering in Progress")
@@ -52,6 +59,7 @@ class SupervisedCluster():
             cv2.imwrite(write_path + str(index) + '.jpg', img)
 
     def main(self,imgRange):
+
         for index in range(imgRange):  # Here the number 100
 
             im = cv2.imread(self.my_files_1[index])
@@ -65,6 +73,7 @@ class SupervisedCluster():
             features = self.model.predict(x)
             features = np.array(features)
             features = np.ravel(features)
+            features = self.avg_downsample(features)
             self.my_feature.append(features)
             print("index ", index, "   feature_shape ", features.shape)
             #return self.my_feature
@@ -81,11 +90,12 @@ class SupervisedCluster():
         elif(var=='2'):
             self.model = VGG19(weights='imagenet', pooling=max, include_top=False)
 
+        #print (self.model.summary)
+
 
 
 
 if __name__ == '__main__':
-    start = time.time()
     start = time.time()
     print("1:Resnet50\n2:VGG19\n3:MobilenetSSD\n")
     var=input()
