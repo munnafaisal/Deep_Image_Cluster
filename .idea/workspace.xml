@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="0ca3ad99-1fe8-4ccc-b2cf-1d553a53aa6c" name="Default Changelist" comment="" />
+    <list default="true" id="0ca3ad99-1fe8-4ccc-b2cf-1d553a53aa6c" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/lshash/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cluster_new1.py" beforeDir="false" afterPath="$PROJECT_DIR$/cluster_new1.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lshash/lshash_2_py3.py" beforeDir="false" afterPath="$PROJECT_DIR$/lshash/lshash_2_py3.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -28,6 +33,11 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+    </key>
   </component>
   <component name="RunManager" selected="Python.cluster_new1">
     <configuration name="cluster_1" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
@@ -163,22 +173,22 @@
       <screen x="67" y="27" width="1613" height="1023" />
     </state>
     <state x="535" y="128" width="666" height="819" key="#cluster_new1/67.27.1613.1023@67.27.1613.1023" timestamp="1587138807889" />
-    <state width="1590" height="277" key="GridCell.Tab.0.bottom" timestamp="1587315382242">
+    <state width="1590" height="267" key="GridCell.Tab.0.bottom" timestamp="1587578492839">
       <screen x="67" y="27" width="1613" height="1023" />
     </state>
-    <state width="1590" height="277" key="GridCell.Tab.0.bottom/67.27.1613.1023@67.27.1613.1023" timestamp="1587315382242" />
-    <state width="1590" height="277" key="GridCell.Tab.0.center" timestamp="1587315382240">
+    <state width="1590" height="267" key="GridCell.Tab.0.bottom/67.27.1613.1023@67.27.1613.1023" timestamp="1587578492839" />
+    <state width="1590" height="267" key="GridCell.Tab.0.center" timestamp="1587578492837">
       <screen x="67" y="27" width="1613" height="1023" />
     </state>
-    <state width="1590" height="277" key="GridCell.Tab.0.center/67.27.1613.1023@67.27.1613.1023" timestamp="1587315382240" />
-    <state width="1590" height="277" key="GridCell.Tab.0.left" timestamp="1587315382238">
+    <state width="1590" height="267" key="GridCell.Tab.0.center/67.27.1613.1023@67.27.1613.1023" timestamp="1587578492837" />
+    <state width="1590" height="267" key="GridCell.Tab.0.left" timestamp="1587578492836">
       <screen x="67" y="27" width="1613" height="1023" />
     </state>
-    <state width="1590" height="277" key="GridCell.Tab.0.left/67.27.1613.1023@67.27.1613.1023" timestamp="1587315382238" />
-    <state width="1590" height="277" key="GridCell.Tab.0.right" timestamp="1587315382241">
+    <state width="1590" height="267" key="GridCell.Tab.0.left/67.27.1613.1023@67.27.1613.1023" timestamp="1587578492836" />
+    <state width="1590" height="267" key="GridCell.Tab.0.right" timestamp="1587578492838">
       <screen x="67" y="27" width="1613" height="1023" />
     </state>
-    <state width="1590" height="277" key="GridCell.Tab.0.right/67.27.1613.1023@67.27.1613.1023" timestamp="1587315382241" />
+    <state width="1590" height="267" key="GridCell.Tab.0.right/67.27.1613.1023@67.27.1613.1023" timestamp="1587578492838" />
     <state x="362" y="172" key="SettingsEditor" timestamp="1587138852664">
       <screen x="67" y="27" width="1613" height="1023" />
     </state>

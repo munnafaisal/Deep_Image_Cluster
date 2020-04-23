@@ -34,7 +34,7 @@ class SupervisedCluster():
     def init_lsh(self, no_bit, no_hash_per_table):
 
         self.lsh = LSHash(hash_size=no_bit, input_dim=self.range,
-                          num_hashtables=1, num_hash_per_tables=no_hash_per_table, storage_config=None,
+                          num_hashtables=1, num_hash_per_tables=no_hash_per_table,hash_type= 'pca_bin', storage_config=None,
                           matrices_filename=None, overwrite=False)
 
         print(" LSH pbject instantiated ")
@@ -71,6 +71,26 @@ class SupervisedCluster():
             img = cv2.imread(self.my_files_1[index])
             write_path = self.clusteredImgSavePath + str(lb) + '/'
             cv2.imwrite(write_path + str(index) + '.jpg', img)
+
+
+    def get_vgg_feature(self, im):
+
+        im = cv2.resize(im, (224, 224))
+        x = image.img_to_array(im)
+        x = np.expand_dims(x, axis=0)
+        x = preprocess_input(x)
+        features = self.model.predict(x)
+        features = np.array(features)
+        features = np.ravel(features)
+
+        return features
+
+    def add_noise_into_img(self,img):
+
+        img = cv2.GaussianBlur(img, (5, 5), cv2.BORDER_DEFAULT)
+        return img
+
+
 
     def main(self,imgRange):
 
@@ -134,6 +154,29 @@ class SupervisedCluster():
             self.indexing_feature(feature=f,additional_data=self.my_files_1[index].split('/')[-1]+ "  ,Folder " + str(label) ,indx = index)
 
 
+    def test_blur_img(self,imgRange):
+
+        for index in range(imgRange):
+
+            im = cv2.imread(self.my_files_1[index])
+            im = cv2.resize(im, (224, 224))
+            im = self.add_noise_into_img(im)
+
+            cv2.imshow("Image", im)
+            cv2.waitKey(1)
+
+            x = image.img_to_array(im)
+            x = np.expand_dims(x, axis=0)
+            x = preprocess_input(x)
+            features = self.model.predict(x)
+            features = np.array(features)
+            features = np.ravel(features)
+            features = self.avg_downsample(features)
+
+            result = self.query_image(img_feature=features)
+            print(" \n index ", index ,result)
+
+
 if __name__ == '__main__':
 
 
@@ -153,13 +196,18 @@ if __name__ == '__main__':
     print('\n\n time spend: ', (end - start) / 60, ' minutes \n\n')
 
     svc.range = np.array(svc.my_feature).shape[1]
-    svc.init_lsh(no_bit=12,no_hash_per_table=5)
+    svc.init_lsh(no_bit=12,no_hash_per_table=20)
     svc.hashing_clustered_image()
 
-    for ff in svc.my_feature:
+    ############## Test Blur Images #################
 
-        result=svc.query_image(img_feature=ff)
-        print(result)
+    svc.test_blur_img(imgRange)
+
+
+    # for ff in svc.my_feature:
+    #
+    #     result=svc.query_image(img_feature=ff)
+    #     print(result)
 
 
 

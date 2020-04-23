@@ -8,7 +8,7 @@ import os
 import json
 import numpy as np
 import time
-
+from lshash.utils import numpy_array_from_list_or_numpy_array, perform_pca
 from lshash.storage import storage
 try:
     from bitarray import bitarray
@@ -44,13 +44,15 @@ class LSHash(object):
         (optional) Whether to overwrite the matrices file if it already exist
     """
 
-    def __init__(self, hash_size, input_dim, num_hashtables= 1,num_hash_per_tables=1,
+    def __init__(self, hash_size, input_dim, num_hashtables= 1,num_hash_per_tables=1,hash_type = None,
                  storage_config=None, matrices_filename=None, overwrite=False):
 
         self.hash_size = hash_size
         self.input_dim = input_dim
         self.num_hashtables = num_hashtables
         self.num_hash_per_tables = num_hash_per_tables
+
+        self.hash_type = hash_type
 
         if storage_config is None:
 
@@ -108,8 +110,22 @@ class LSHash(object):
                     print("IOError when saving matrices to specificed path")
                     raise
         else:
-            self.uniform_planes = [self._generate_uniform_planes()
-                                   for _ in range(self.num_hash_per_tables)]
+
+            if self.hash_type == "pca_bin":
+
+                print("Collecting PCA planes...")
+
+
+                self.uniform_planes = [self.get_PCA_planes(np.random.randn(self.num_hash_per_tables*self.hash_size+10, self.input_dim),self.num_hash_per_tables*self.hash_size)]
+
+                self.uniform_planes = np.array(self.uniform_planes)
+
+                self.uniform_planes = np.resize(self.uniform_planes,(self.num_hash_per_tables,self.hash_size,self.input_dim))
+
+            else:
+
+                self.uniform_planes = [self._generate_uniform_planes()
+                                       for _ in range(self.num_hash_per_tables)]
 
     def _init_hashtables(self):
         """ Initialize the hash tables such that each record will be in the
@@ -126,6 +142,48 @@ class LSHash(object):
         """
 
         return np.random.randn(self.hash_size, self.input_dim)
+
+    def get_PCA_planes(self, training_set,projection_count):
+
+
+        if not training_set is None:
+            # Get numpy array representation of input
+            training_set = numpy_array_from_list_or_numpy_array(training_set)
+
+            # Get subspace size from training matrix
+            self.dim = training_set.shape[0]
+
+            # Get transposed training set matrix for PCA
+            training_set_t = np.transpose(training_set)
+
+            # Compute principal components
+            (eigenvalues, eigenvectors) = perform_pca(training_set_t)
+
+            # Get largest N eigenvalue/eigenvector indices
+            largest_eigenvalue_indices = np.flipud(
+                np.argsort(eigenvalues))[:projection_count]
+
+            # Create matrix for first N principal components
+            self.components = np.zeros((self.dim,
+                                           len(largest_eigenvalue_indices)))
+
+            # Put first N principal components into matrix
+            for index in range(len(largest_eigenvalue_indices)):
+                self.components[:, index] = \
+                    eigenvectors[:, largest_eigenvalue_indices[index]]
+
+            # We need the component vectors to be in the rows
+            self.components = np.transpose(self.components)
+        else:
+            self.dim = None
+            self.components = None
+
+        # This is only used in case we need to process sparse vectors
+        self.components_csr = None
+
+        return self.components
+
+
 
     def _hash(self, planes, input_point):
 
@@ -296,6 +354,7 @@ class LSHash(object):
 
 
                     #ss = time.time()
+                    #print("\n  uniform_plane_shape ",np.array(self.uniform_planes[i]).shape)
                     binary_hash = self._hash(self.uniform_planes[i], query_point)
                     #print ("hash type",type(binary_hash))
 
