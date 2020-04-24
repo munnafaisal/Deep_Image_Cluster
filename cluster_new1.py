@@ -6,7 +6,8 @@ from keras.models import Model
 from keras.preprocessing import image
 from keras.applications.imagenet_utils import preprocess_input
 import numpy as np
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans,AgglomerativeClustering
+from sklearn.metrics import silhouette_samples, silhouette_score
 from lshash.lshash_2_py3 import LSHash
 
 #from google.cloud import storage
@@ -16,19 +17,43 @@ import time
 import glob
 import cv2
 
+#dirs = sorted(glob.glob('./Clustered_folder/For_balck_video/*/'))
+#files = sorted(glob.glob(dirs[0]+'*.jpg'))
+
 class SupervisedCluster():
 
     def __init__(self):
 
         self.my_files_1 = sorted(glob.glob('./Cropped_Image_2/Cropped_Image/*.jpg'),key=lambda x: int(x.split("/")[-1].split(".")[0]))
-        self.model = ResNet50(weights='imagenet', pooling=max, include_top=False)
+        #self.model = ResNet50(weights='imagenet', pooling=max, include_top=False)
         self.k = 0
         self.my_feature = []  # All feature is to stored here
         self.small_file = []
-        self.N_of_Cluster = 3
+        self.N_of_Cluster = 4
+        self.N_of_sub_Cluster = 5
         self.labels = []
         self.clusteredImgSavePath = './Clustered_folder/For_balck_video/'
         self.range = 1000
+
+    def sub_cluster_features(self):
+
+        self.cluster_features = []
+        self.labels = np.array(self.labels)
+        self.my_feature = np.array(self.my_feature)
+
+        for n in range(0,self.N_of_Cluster):
+
+            k = np.where(self.labels==n)[0]
+            f = np.take(self.my_feature,k,axis= 0 )
+            self.cluster_features.append(f)
+
+            print("\n cluster no ", n)
+            print(",\n features \n ",f.shape )
+
+        return self.cluster_features
+
+
+
 
 
     def init_lsh(self, no_bit, no_hash_per_table):
@@ -43,13 +68,14 @@ class SupervisedCluster():
 
     def avg_downsample(self,feature):
 
-        k =8  # sampling factor
+        k =4  # sampling factor
         f= feature.reshape(-1, k).mean(axis=1)
         return f
 
     def cluster(self):
-        print("\n\n clustering in Progress")
 
+        print("\n\n clustering in Progress")
+        self.N_of_Cluster = np.int(self.N_of_Cluster)
         kmeans = KMeans(n_clusters=self.N_of_Cluster)
         kmeans = kmeans.fit(self.my_feature)
 
@@ -68,6 +94,7 @@ class SupervisedCluster():
                 continue
 
         for index, lb in enumerate(self.labels):
+
             img = cv2.imread(self.my_files_1[index])
             write_path = self.clusteredImgSavePath + str(lb) + '/'
             cv2.imwrite(write_path + str(index) + '.jpg', img)
@@ -177,6 +204,43 @@ class SupervisedCluster():
             print(" \n index ", index ,result)
 
 
+    def kmean_unsupervised(self,range_cls,features):
+
+        n_test = [n for n in range(2,range_cls)]
+        s_score = []
+
+
+        for n in n_test :
+
+            #clusterer = KMeans(n_clusters=n, random_state=10)
+            clusterer = AgglomerativeClustering(n_clusters=n, linkage="average")
+
+            cluster_labels = clusterer.fit_predict(features)
+
+
+            #print("\n Cluster labels :: ", cluster_labels)
+            # The silhouette_score gives the average value for all the samples.
+            # This gives a perspective into the density and separation of the formed
+            # clusters
+
+
+            silhouette_avg = silhouette_score(features, cluster_labels)
+            s_score.append(silhouette_avg)
+
+            print("For n_clusters =", n,
+                  "The average silhouette_score is :", silhouette_avg)
+
+
+        s_score = np.array(s_score)
+        optimal_cluster = np.where(s_score == np.max(s_score))[0]+2
+        print("\n optimal_cluster :: ", optimal_cluster)
+        print(" \n\n ")
+
+        return optimal_cluster
+
+
+
+
 if __name__ == '__main__':
 
 
@@ -184,32 +248,76 @@ if __name__ == '__main__':
     print("1:Resnet50\n2:VGG19\n3:MobilenetSSD\n")
     var=input()
 
+    ########### Instantiate Cluster Ibject ##########
+
     svc=SupervisedCluster()
     #imgRange=svc.imageRange()
+
+    ############ Select Pretrained Object Detection Model #############
+
     svc.modelSelect(var)
+
+    ################## Number of Image to be read from Image ##############
+
     imgRange=100
+
+    ############### Get Feature From Images ###############
+
     svc.main(imgRange)
 
+
+
+        ########### Unsupervised Clustering ####################
+
+################## Get optimal number of parent cluster using silhouette score  ###############
+
+    svc.N_of_Cluster = svc.kmean_unsupervised(range_cls=20,features= svc.my_feature)
+
+    ###################### Initiate Clustering Process ########################
+
     svc.cluster()
+
+    #################### Save Images in the Parent Cluster  ##################
+
     svc.save_img_cluster()
     end = time.time()
     print('\n\n time spend: ', (end - start) / 60, ' minutes \n\n')
 
+
+    #################### Initiate LSH Hashing ####################
+
     svc.range = np.array(svc.my_feature).shape[1]
-    svc.init_lsh(no_bit=12,no_hash_per_table=20)
+    svc.init_lsh(no_bit=12,no_hash_per_table=5)
+
+
+################## Get Clustered Features ####################
+
+    svc.sub_cluster_features()
+
+################## Get optimal number of child cluster for each parent cluster using silhouette score  ###############
+
+    for k in range(0,svc.N_of_Cluster):
+
+        print (" \n \n sub_cluster :: ", k )
+        svc.kmean_unsupervised(range_cls=5,features= svc.cluster_features[k])
+
+
+################# Start Hashing Clustered Images #################
+
     svc.hashing_clustered_image()
 
-    ############## Test Blur Images #################
+
+
+################## Test Blur Images #################
 
     svc.test_blur_img(imgRange)
 
+    for ff in svc.my_feature:
 
-    # for ff in svc.my_feature:
-    #
-    #     result=svc.query_image(img_feature=ff)
-    #     print(result)
-
+        result=svc.query_image(img_feature=ff)
+        print("\n",result)
 
 
-    print(np.array(svc.my_feature).shape)
+
+    #print(np.array(svc.my_feature).shape)
     cv2.destroyAllWindows()

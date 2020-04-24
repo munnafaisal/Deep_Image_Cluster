@@ -372,7 +372,7 @@ class LSHash(object):
         candidates.sort(key=lambda x: x[1])
 
 
-        print("\n candidate loop calc ", e2-s2,"length of candidate", len(candidates))
+        #print("\n candidate loop calc ", e2-s2,"length of candidate", len(candidates))
 
         return candidates[:num_results] if num_results else candidates
 
