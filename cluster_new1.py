@@ -312,10 +312,7 @@ if __name__ == '__main__':
 
     svc.test_blur_img(imgRange)
 
-    for ff in svc.my_feature:
 
-        result=svc.query_image(img_feature=ff)
-        print("\n",result)
 
 
 
