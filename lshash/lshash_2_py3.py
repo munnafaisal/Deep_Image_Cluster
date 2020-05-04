@@ -344,6 +344,11 @@ class LSHash(object):
             elif distance_func == "np_bin_dist":
                 d_func = LSHash.hamming_np_bin_dist
 
+            elif distance_func == "normalised_euclidean":
+                d_func = LSHash.normalised_euclidean
+
+
+
             else:
                 raise ValueError("The distance function name is invalid.")
 
@@ -372,7 +377,7 @@ class LSHash(object):
         candidates.sort(key=lambda x: x[1])
 
 
-        #print("\n candidate loop calc ", e2-s2,"length of candidate", len(candidates))
+        print("\n candidate loop calc ", e2-s2,"length of candidate", len(candidates))
 
         return candidates[:num_results] if num_results else candidates
 
@@ -412,3 +417,7 @@ class LSHash(object):
     @staticmethod
     def hamming_np_bin_dist(x, y):
         return np.count_nonzero(x!=y)
+
+    @staticmethod
+    def normalised_euclidean(x, y):
+        return np.var(x - y)/(np.var(x) + np.var(y))

@@ -44,7 +44,7 @@ class SupervisedCluster():
         for n in range(0,self.N_of_Cluster):
 
             k = np.where(self.labels==n)[0]
-            f = np.take(self.my_feature,k,axis= 0 )
+            f = np.take(self.my_feature,k,axis= 0)
             self.cluster_features.append(f)
 
             print("\n cluster no ", n)
@@ -62,8 +62,51 @@ class SupervisedCluster():
                           num_hashtables=1, num_hash_per_tables=no_hash_per_table,hash_type= 'pca_bin', storage_config=None,
                           matrices_filename=None, overwrite=False)
 
-        print(" LSH pbject instantiated ")
+        print(" LSH object instantiated ")
 
+
+
+    def histogram_equalization(self,img_in):
+
+        # segregate color streams
+        b, g, r = cv2.split(img_in)
+        h_b, bin_b = np.histogram(b.flatten(), 256, [0, 256])
+        h_g, bin_g = np.histogram(g.flatten(), 256, [0, 256])
+        h_r, bin_r = np.histogram(r.flatten(), 256, [0, 256])
+        # calculate cdf
+        cdf_b = np.cumsum(h_b)
+        cdf_g = np.cumsum(h_g)
+        cdf_r = np.cumsum(h_r)
+
+        # mask all pixels with value=0 and replace it with mean of the pixel values
+        cdf_m_b = np.ma.masked_equal(cdf_b, 0)
+        cdf_m_b = (cdf_m_b - cdf_m_b.min()) * 255 / (cdf_m_b.max() - cdf_m_b.min())
+        cdf_final_b = np.ma.filled(cdf_m_b, 0).astype('uint8')
+
+        cdf_m_g = np.ma.masked_equal(cdf_g, 0)
+        cdf_m_g = (cdf_m_g - cdf_m_g.min()) * 255 / (cdf_m_g.max() - cdf_m_g.min())
+        cdf_final_g = np.ma.filled(cdf_m_g, 0).astype('uint8')
+
+        cdf_m_r = np.ma.masked_equal(cdf_r, 0)
+        cdf_m_r = (cdf_m_r - cdf_m_r.min()) * 255 / (cdf_m_r.max() - cdf_m_r.min())
+        cdf_final_r = np.ma.filled(cdf_m_r, 0).astype('uint8')
+        # merge the images in the three channels
+        img_b = cdf_final_b[b]
+        img_g = cdf_final_g[g]
+        img_r = cdf_final_r[r]
+
+        img_out = cv2.merge((img_b, img_g, img_r))
+
+        # validation
+        # equ_b = cv2.equalizeHist(b)
+        # equ_g = cv2.equalizeHist(g)
+        # equ_r = cv2.equalizeHist(r)
+        # equ = cv2.merge((equ_b, equ_g, equ_r))
+        # print(equ)
+        # cv2.imwrite('output_name.png', equ)
+
+
+        return img_out
 
 
     def avg_downsample(self,feature):
@@ -71,6 +114,13 @@ class SupervisedCluster():
         k =4  # sampling factor
         f= feature.reshape(-1, k).mean(axis=1)
         return f
+
+    def get_segmented_data(self,feature, st,en):
+
+        f= feature[st:en]
+        return f
+
+
 
     def cluster(self):
 
@@ -126,6 +176,7 @@ class SupervisedCluster():
             im = cv2.imread(self.my_files_1[index])
             self.small_file.append(self.my_files_1[index])
             im = cv2.resize(im, (224, 224))
+            im = self.histogram_equalization(img_in= im)
             cv2.imshow("Image", im)
             cv2.waitKey(1)
             x = image.img_to_array(im)
@@ -134,7 +185,10 @@ class SupervisedCluster():
             features = self.model.predict(x)
             features = np.array(features)
             features = np.ravel(features)
+
             features = self.avg_downsample(features)
+
+            #features = self.get_segmented_data(features, st=32000, en=64000)
             self.my_feature.append(features)
             print("index ", index, "   feature_shape ", features.shape)
             #return self.my_feature
@@ -167,7 +221,7 @@ class SupervisedCluster():
     def query_image(self,img_feature):
 
         s = time.time()
-        query_result = self.lsh.query(img_feature[0:self.range], num_results=10, distance_func='euclidean')
+        query_result = self.lsh.query(img_feature[0:self.range], num_results=10, distance_func='normalised_euclidean')
         e = time.time()
 
         print(" \n query_time ", e-s, '\n')
@@ -187,6 +241,7 @@ class SupervisedCluster():
 
             im = cv2.imread(self.my_files_1[index])
             im = cv2.resize(im, (224, 224))
+            im = self.histogram_equalization(img_in= im)
             im = self.add_noise_into_img(im)
 
             cv2.imshow("Image", im)
@@ -198,7 +253,10 @@ class SupervisedCluster():
             features = self.model.predict(x)
             features = np.array(features)
             features = np.ravel(features)
+
             features = self.avg_downsample(features)
+
+            #features = self.get_segmented_data(features, st=32000, en=64000)
 
             result = self.query_image(img_feature=features)
             print(" \n index ", index ,result)
@@ -213,6 +271,7 @@ class SupervisedCluster():
         for n in n_test :
 
             #clusterer = KMeans(n_clusters=n, random_state=10)
+
             clusterer = AgglomerativeClustering(n_clusters=n, linkage="average")
 
             cluster_labels = clusterer.fit_predict(features)
@@ -259,7 +318,7 @@ if __name__ == '__main__':
 
     ################## Number of Image to be read from Image ##############
 
-    imgRange=100
+    imgRange=1000
 
     ############### Get Feature From Images ###############
 
@@ -287,7 +346,7 @@ if __name__ == '__main__':
     #################### Initiate LSH Hashing ####################
 
     svc.range = np.array(svc.my_feature).shape[1]
-    svc.init_lsh(no_bit=12,no_hash_per_table=5)
+    svc.init_lsh(no_bit=16,no_hash_per_table=5)
 
 
 ################## Get Clustered Features ####################
@@ -296,13 +355,13 @@ if __name__ == '__main__':
 
 ################## Get optimal number of child cluster for each parent cluster using silhouette score  ###############
 
-    for k in range(0,svc.N_of_Cluster):
+    # for k in range(0,svc.N_of_Cluster):
+    #
+    #     print (" \n \n sub_cluster :: ", k )
+    #     svc.kmean_unsupervised(range_cls=5,features= svc.cluster_features[k])
 
-        print (" \n \n sub_cluster :: ", k )
-        svc.kmean_unsupervised(range_cls=5,features= svc.cluster_features[k])
 
-
-################# Start Hashing Clustered Images #################
+################# Start Hashing Clustered Images ######################################
 
     svc.hashing_clustered_image()
 
