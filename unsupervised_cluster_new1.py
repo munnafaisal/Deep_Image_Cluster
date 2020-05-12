@@ -365,15 +365,9 @@ if __name__ == '__main__':
 
     svc.hashing_clustered_image()
 
-
-
 ################## Test Blur Images #################
 
     svc.test_blur_img(imgRange)
-
-
-
-
 
     #print(np.array(svc.my_feature).shape)
     cv2.destroyAllWindows()
