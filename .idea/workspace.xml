@@ -16,7 +16,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="0ca3ad99-1fe8-4ccc-b2cf-1d553a53aa6c" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/unsupervised_cluster_new1.py" beforeDir="false" afterPath="$PROJECT_DIR$/unsupervised_cluster_new1.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

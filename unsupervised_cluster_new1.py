@@ -20,7 +20,7 @@ import cv2
 #dirs = sorted(glob.glob('./Clustered_folder/For_balck_video/*/'))
 #files = sorted(glob.glob(dirs[0]+'*.jpg'))
 
-class SupervisedCluster():
+class UnSupervisedCluster():
 
     def __init__(self):
 
@@ -51,9 +51,6 @@ class SupervisedCluster():
             print(",\n features \n ",f.shape )
 
         return self.cluster_features
-
-
-
 
 
     def init_lsh(self, no_bit, no_hash_per_table):
@@ -309,7 +306,7 @@ if __name__ == '__main__':
 
     ########### Instantiate Cluster Ibject ##########
 
-    svc=SupervisedCluster()
+    svc=UnSupervisedCluster()
     #imgRange=svc.imageRange()
 
     ############ Select Pretrained Object Detection Model #############
