@@ -10,10 +10,14 @@ import numpy as np
 import time
 from lshash.utils import numpy_array_from_list_or_numpy_array, perform_pca
 from lshash.storage import storage
+
 try:
     from bitarray import bitarray
 except ImportError:
     bitarray = None
+
+
+from sklearn.neighbors import NearestNeighbors
 
 
 class LSHash(object):
@@ -52,6 +56,8 @@ class LSHash(object):
         self.num_hashtables = num_hashtables
         self.num_hash_per_tables = num_hash_per_tables
 
+        self.hash_keys = []
+
         self.hash_type = hash_type
 
         if storage_config is None:
@@ -67,6 +73,42 @@ class LSHash(object):
 
         self._init_uniform_planes()
         self._init_hashtables()
+
+
+
+    def build_NN(self,keys,n_of_neighbour):
+
+        nbrs = NearestNeighbors(n_neighbors=n_of_neighbour, algorithm='ball_tree').fit(keys)
+        self.nbrs = nbrs
+
+        print(" \n \n Nearest Neighbour computed  :: ")
+
+
+
+
+    def arr_to_str(self,m):
+
+       return "".join(['1' if i > 0 else '0' for i in m])
+
+
+    def str_to_arr(self,k):
+
+        ar = [int(x) for x in list(k)]
+        return ar
+
+    def get_keys(self):
+
+        for table in self.hash_tables:
+
+            keys = list(table.keys())
+
+
+            for index, key in enumerate(keys):
+                ar = [int(x) for x in list(key)]
+                keys[index] = ar
+
+
+        return keys
 
     def _init_uniform_planes(self):
 
@@ -353,6 +395,8 @@ class LSHash(object):
                 raise ValueError("The distance function name is invalid.")
 
 
+            binary_hash_list = []
+
             for i ,hash in enumerate(self.uniform_planes):
 
                 for table in self.hash_tables:
@@ -361,20 +405,59 @@ class LSHash(object):
                     #ss = time.time()
                     #print("\n  uniform_plane_shape ",np.array(self.uniform_planes[i]).shape)
                     binary_hash = self._hash(self.uniform_planes[i], query_point)
-                    #print ("hash type",type(binary_hash))
+                    binary_hash_list.append(binary_hash)
+
+
+                    # array_hash = self.str_to_arr(binary_hash)
+                    # print (" array_hash  ::",array_hash)
+
+
+                    # print("\n")
+                    # str_hash = self.arr_to_str(array_hash)
+                    # print(" string_hash ::", str_hash)
 
                     candidates.update(table.get_list(binary_hash))
 
-        # rank candidates by distance function
 
+            if len(candidates) == 0:
+
+                print("\n\n  performing NN Search")
+
+                for h in binary_hash_list:
+
+                    distances, indices = self.nbrs.kneighbors(np.array(self.str_to_arr(h)).reshape(1,-1), 20)
+
+                    for table in self.hash_tables:
+
+                        for inddice in indices[0]:
+
+                            str_bin_hash = self.arr_to_str(self.hash_keys[inddice])
+                            #str_bin_hash = "".join(['1' if i > 0 else '0' for i in array_bin_hash])
+                            candidates.update(table.get_list(str_bin_hash))
+
+
+
+
+        # rank candidates by distance function
 
         s2 = time.time()
 
-        candidates = [(ix[1], d_func(query_point, self._as_np_array(ix[0])))
-                      for ix in candidates]
-        e2 = time.time()
+
+        if distance_func == "normalised_euclidean" :
+
+            var_x= np.var(query_point)
+
+            candidates = [(ix[1][0], d_func(query_point,self._as_np_array(ix[0]), var_x,ix[1][1]))
+                          for ix in candidates]
+
+        else:
+            candidates = [(ix[1][0], d_func(query_point, self._as_np_array(ix[0])))
+                          for ix in candidates]
+
 
         candidates.sort(key=lambda x: x[1])
+
+        e2 = time.time()
 
 
         print("\n candidate loop calc ", e2-s2,"length of candidate", len(candidates))
@@ -419,5 +502,5 @@ class LSHash(object):
         return np.count_nonzero(x!=y)
 
     @staticmethod
-    def normalised_euclidean(x, y):
-        return np.var(x - y)/(np.var(x) + np.var(y))
+    def normalised_euclidean(x, y, var_x, var_y):
+        return np.var(x - y)/(var_x + var_y)
